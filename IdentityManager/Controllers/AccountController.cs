@@ -26,19 +26,22 @@ namespace IdentityManager.Controllers
             return View();
         }
 
-/*Register Get*/
+        /*Register Get*/
         [HttpGet]
-        public async Task<IActionResult> Register()
+        public async Task<IActionResult> Register(string returnurl = null)
         {
+            ViewData["ReturnUrl"] = returnurl;
             RegisterViewModel registerViewModel = new RegisterViewModel();
             return View(registerViewModel);
         }
 
-/*Register Post*/
+        /*Register Post*/
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+        public async Task<IActionResult> Register(RegisterViewModel model, string returnurl = null)
         {
+            ViewData["ReturnUrl"] = returnurl;
+            returnurl = returnurl ?? Url.Content("~/");
             if (ModelState.IsValid)
             {
                 var user = new ApplicationUser { UserName = model.Email, Email = model.Email, Name = model.Name };
@@ -46,7 +49,7 @@ namespace IdentityManager.Controllers
                 if (result.Succeeded)
                 {
                     await _signInManager.SignInAsync(user, isPersistent: false);
-                    return RedirectToAction("Index", "Home");
+                    return LocalRedirect(returnurl);
                 }
                 AddErrors(result);
             }
@@ -55,26 +58,31 @@ namespace IdentityManager.Controllers
             return View(model);
         }
 
-/*Login Get Action Method*/
+        /*Login Get Action Method*/
         [HttpGet]
-        public IActionResult Login(string returnurl=null)
+        public IActionResult Login(string returnurl = null)
         {
             ViewData["ReturnUrl"] = returnurl;
             return View();
         }
 
-/*LoginViewModel Post*/
+        /*LoginViewModel Post*/
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model, string returnurl=null)
+        public async Task<IActionResult> Login(LoginViewModel model, string returnurl = null)
         {
             ViewData["ReturnUrl"] = returnurl;
+            returnurl = returnurl ?? Url.Content("~/");
             if (ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
                 if (result.Succeeded)
                 {
-                    return Redirect(returnurl);
+                    return LocalRedirect(returnurl);
+                }
+                if (result.IsLockedOut)
+                {
+                    return View("Lockout");
                 }
                 else
                 {
@@ -96,6 +104,41 @@ namespace IdentityManager.Controllers
             return RedirectToAction(nameof(HomeController.Index), "Home");
         }
 
+
+        /*Forgot Password Get Action Method*/
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        /*Forgot Password Post Action Method*/
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            //ViewData["ReturnUrl"] = returnurl;
+            //returnurl = returnurl ?? Url.Content("~/");
+            //if (ModelState.IsValid)
+            //{
+            //    var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
+            //    if (result.Succeeded)
+            //    {
+            //        return LocalRedirect(returnurl);
+            //    }
+            //    if (result.IsLockedOut)
+            //    {
+            //        return View("Lockout");
+            //    }
+            //    else
+            //    {
+            //        ModelState.AddModelError(string.Empty, "Invalid Login Attempt.");
+            //        return View(model);
+            //    }
+            //}
+            return View(model);
+        }
+
         private void AddErrors(IdentityResult result)
         {
             foreach (var error in result.Errors)
@@ -103,7 +146,7 @@ namespace IdentityManager.Controllers
                 ModelState.AddModelError(string.Empty, error.Description);
             }
         }
+
     }
 }
-
 
