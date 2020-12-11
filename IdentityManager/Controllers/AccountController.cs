@@ -26,6 +26,7 @@ namespace IdentityManager.Controllers
             return View();
         }
 
+/*Register Get*/
         [HttpGet]
         public async Task<IActionResult> Register()
         {
@@ -33,6 +34,7 @@ namespace IdentityManager.Controllers
             return View(registerViewModel);
         }
 
+/*Register Post*/
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
@@ -51,6 +53,47 @@ namespace IdentityManager.Controllers
             /*            RegisterViewModel registerViewModel = new RegisterViewModel();
                         return View(registerViewModel);*/
             return View(model);
+        }
+
+/*Login Get Action Method*/
+        [HttpGet]
+        public IActionResult Login(string returnurl=null)
+        {
+            ViewData["ReturnUrl"] = returnurl;
+            return View();
+        }
+
+/*LoginViewModel Post*/
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model, string returnurl=null)
+        {
+            ViewData["ReturnUrl"] = returnurl;
+            if (ModelState.IsValid)
+            {
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
+                if (result.Succeeded)
+                {
+                    return Redirect(returnurl);
+                }
+                else
+                {
+                    ModelState.AddModelError(string.Empty, "Invalid Login Attempt.");
+                    return View(model);
+                }
+            }
+            return View(model);
+        }
+
+
+        /*Logoff*/
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logoff()
+        {
+            await _signInManager.SignOutAsync();
+            return RedirectToAction(nameof(HomeController.Index), "Home");
         }
 
         private void AddErrors(IdentityResult result)
